@@ -10,6 +10,7 @@ import '@styles/tokens.css';
 import '@styles/global.css';
 
 interface Props {
+  /** Sidans eget namn, t.ex. "Sök". Portalnamnet läggs till automatiskt. */
   title?: string;
   description?: string;
 }
@@ -29,7 +30,11 @@ try {
   if (config?.aboutConfig?.menuLabel) aboutMenuLabel = config.aboutConfig.menuLabel;
 } catch { /* använd defaults */ }
 
-const { title = siteName, description = 'Sök och utforska arkivet' } = Astro.props;
+const { title, description = 'Sök och utforska arkivet' } = Astro.props;
+
+// Portalnamnet kommer från config.json och ändras av adminytan. Sidorna skickar
+// bara sitt eget namn, annars blir ett omdöpt portalnamn kvar i varje flik.
+const pageTitle = title ? `${title} – ${siteName}` : siteName;
 ---
 
 <!doctype html>
@@ -38,7 +43,7 @@ const { title = siteName, description = 'Sök och utforska arkivet' } = Astro.pr
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
-    <title>{title}</title>
+    <title>{pageTitle}</title>
     <link rel="stylesheet" href="/digi/fonts/src/fonts.css" />
     <link rel="stylesheet" href="/digi/digi-arbetsformedlingen.css" />
   </head>
