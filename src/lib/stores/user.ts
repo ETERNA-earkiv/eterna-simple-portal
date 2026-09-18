@@ -4,10 +4,10 @@
 
 import { atom, computed } from 'nanostores';
 import { apiGet } from '../api/client';
-import type { RodaUser } from '../types/user';
-import { RODA_ROLES } from '../types/user';
+import type { EternaUser } from '../types/user';
+import { ETERNA_ROLES } from '../types/user';
 
-export const $user = atom<RodaUser | null>(null);
+export const $user = atom<EternaUser | null>(null);
 export const $userLoading = atom(false);
 export const $userError = atom<string | null>(null);
 
@@ -23,28 +23,28 @@ function hasRole(role: string): boolean {
   return user?.allRoles?.includes(role) ?? false;
 }
 
-export const $canBrowse = computed($user, () => hasRole(RODA_ROLES.AIP_READ));
+export const $canBrowse = computed($user, () => hasRole(ETERNA_ROLES.AIP_READ));
 export const $canEditAIPs = computed($user, () =>
-  hasRole(RODA_ROLES.AIP_UPDATE) || hasRole(RODA_ROLES.MEMBER_MANAGE),
+  hasRole(ETERNA_ROLES.AIP_UPDATE) || hasRole(ETERNA_ROLES.MEMBER_MANAGE),
 );
 export const $canDeleteAIPs = computed($user, () =>
-  hasRole(RODA_ROLES.AIP_DELETE) || hasRole(RODA_ROLES.MEMBER_MANAGE),
+  hasRole(ETERNA_ROLES.AIP_DELETE) || hasRole(ETERNA_ROLES.MEMBER_MANAGE),
 );
 export const $canCreateAIPs = computed($user, () =>
-  hasRole(RODA_ROLES.AIP_CREATE) || hasRole(RODA_ROLES.MEMBER_MANAGE),
+  hasRole(ETERNA_ROLES.AIP_CREATE) || hasRole(ETERNA_ROLES.MEMBER_MANAGE),
 );
 export const $canManageMembers = computed($user, () =>
-  hasRole(RODA_ROLES.MEMBER_MANAGE),
+  hasRole(ETERNA_ROLES.MEMBER_MANAGE),
 );
 export const $canCreateRepresentations = computed($user, () =>
-  hasRole(RODA_ROLES.REPRESENTATION_CREATE) || hasRole(RODA_ROLES.MEMBER_MANAGE),
+  hasRole(ETERNA_ROLES.REPRESENTATION_CREATE) || hasRole(ETERNA_ROLES.MEMBER_MANAGE),
 );
 
 export async function loadUserProfile(): Promise<void> {
   $userLoading.set(true);
   $userError.set(null);
   try {
-    const user = await apiGet<RodaUser>('/api/v2/members/users/authenticated');
+    const user = await apiGet<EternaUser>('/api/v2/members/users/authenticated');
     $user.set(user);
   } catch (err) {
     $userError.set(err instanceof Error ? err.message : 'Kunde inte hämta användarprofil');

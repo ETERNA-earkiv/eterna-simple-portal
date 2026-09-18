@@ -2,11 +2,11 @@
  * Astro middleware — Auth guard
  *
  * Skyddar adminytan genom att validera JSESSIONID-cookien
- * mot RODA V2 API innan sidan renderas.
+ * mot ETERNA V2 API innan sidan renderas.
  */
 
 import { defineMiddleware } from 'astro:middleware';
-import { RODA_API_URL } from '@lib/server/env';
+import { ETERNA_API_URL } from '@lib/server/env';
 
 const PROTECTED_PREFIXES = ['/admin'];
 const LOGIN_PATH = '/logga-in';
@@ -25,9 +25,9 @@ export const onRequest = defineMiddleware(async (context, next) => {
     return context.redirect(`${LOGIN_PATH}?returnUrl=${returnUrl}`);
   }
 
-  // Validate session against RODA API
+  // Validate session against ETERNA API
   try {
-    const res = await fetch(`${RODA_API_URL}/api/v2/members/users/authenticated`, {
+    const res = await fetch(`${ETERNA_API_URL}/api/v2/members/users/authenticated`, {
       headers: {
         Cookie: `JSESSIONID=${sessionCookie.value}`,
       },

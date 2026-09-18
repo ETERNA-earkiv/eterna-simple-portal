@@ -1,6 +1,6 @@
-/** RODA user and group types. */
+/** ETERNA user and group types. */
 
-export interface RodaUser {
+export interface EternaUser {
     uuid: string;
     id: string;
     name: string;
@@ -13,7 +13,7 @@ export interface RodaUser {
     extra?: Array<{ id: string; options: Record<string, string> }>;
 }
 
-export interface RodaGroup {
+export interface EternaGroup {
     uuid: string;
     id: string;
     name: string;
@@ -24,7 +24,7 @@ export interface RodaGroup {
     users: string[];
 }
 
-/** Access key returned by RODA V2 API. Secret is only present on create/regenerate (shown once). */
+/** Access key returned by ETERNA V2 API. Secret is only present on create/regenerate (shown once). */
 export interface AccessKey {
     id: string;
     name?: string;
@@ -52,10 +52,10 @@ export interface RoleDefinition {
 }
 
 /**
- * All known RODA permission roles grouped by category, with Swedish labels.
- * Order matches the RODA admin UI reference screenshot.
+ * All known ETERNA permission roles grouped by category, with Swedish labels.
+ * Order matches the ETERNA admin UI reference screenshot.
  */
-export const RODA_ROLE_DEFINITIONS: RoleDefinition[] = [
+export const ETERNA_ROLE_DEFINITIONS: RoleDefinition[] = [
     // Logiska enheter (AIP)
     { role: 'aip.read', label: 'Hämta logiska enheter (AIP)', category: 'Logiska enheter (AIP)' },
     { role: 'aip.view', label: 'Lista och sök efter logiska enheter (AIP)', category: 'Logiska enheter (AIP)' },
@@ -145,7 +145,7 @@ export const RODA_ROLE_DEFINITIONS: RoleDefinition[] = [
 ];
 
 /** Quick-access role ID constants. */
-export const RODA_ROLES = {
+export const ETERNA_ROLES = {
     AIP_READ: 'aip.read',
     AIP_VIEW: 'aip.view',
     AIP_CREATE: 'aip.create',
@@ -194,4 +194,4 @@ export const RODA_ROLES = {
     DISTRIBUTED_INSTANCES_READ: 'distributed_instances.read',
 } as const;
 
-export type RodaRole = typeof RODA_ROLES[keyof typeof RODA_ROLES];
+export type EternaRole = typeof ETERNA_ROLES[keyof typeof ETERNA_ROLES];

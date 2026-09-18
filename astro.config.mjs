@@ -11,7 +11,7 @@ export default defineConfig({
   // lösenordet i klartext i dist/.
   env: {
     schema: {
-      RODA_API_URL: envField.string({
+      ETERNA_API_URL: envField.string({
         context: 'server',
         access: 'public',
         default: 'http://localhost:8080',
@@ -37,7 +37,7 @@ export default defineConfig({
       strictPort: true,
       hmr: false,
       proxy: {
-        // /api/v2 hanteras av Astro catch-all route (anonymt → RODA guest,
+        // /api/v2 hanteras av Astro catch-all route (anonymt → ETERNA guest,
         // inloggad → egen session)
         '/api/portal': {
           target: 'http://localhost:3000',

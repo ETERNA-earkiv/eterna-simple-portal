@@ -62,10 +62,10 @@ export function SearchFieldConfig() {
         const label = translateLabel(englishLabel);
 
         const typeKey = `ui.search.fields.IndexedAIP.${fieldName}.type`;
-        const rodaType = props[typeKey]?.[0] || 'text';
+        const eternaType = props[typeKey]?.[0] || 'text';
         let type: FieldConfig['type'] = 'text';
-        if (rodaType === 'date_interval') type = 'date-range';
-        else if (rodaType === 'controlled') type = 'select';
+        if (eternaType === 'date_interval') type = 'date-range';
+        else if (eternaType === 'controlled') type = 'select';
 
         candidates.push({ fieldName, label, type });
       }

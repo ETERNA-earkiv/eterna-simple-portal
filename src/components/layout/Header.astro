@@ -12,7 +12,7 @@ const { siteName = 'E-Arkiv Portal', logoUrl = '', aboutMenuLabel = '' } = Astro
 // Admin-länken ska bara synas för riktigt inloggade (icke-guest) användare.
 // En kvarliggande JSESSIONID-cookie räcker inte som tecken på detta — den
 // kan vara ogiltig/utgången (t.ex. efter en backend-omstart) medan den
-// fortfarande finns kvar i webbläsaren. Därför valideras den mot RODA på
+// fortfarande finns kvar i webbläsaren. Därför valideras den mot ETERNA på
 // samma sätt som src/middleware.ts gör för själva åtkomstskyddet.
 const sessionCookie = Astro.cookies.get('JSESSIONID');
 const isLoggedIn = await isAuthenticatedNonGuest(sessionCookie?.value);

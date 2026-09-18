@@ -2,7 +2,7 @@
 
 ## Vad detta är
 
-Enkel sökportal för arkivobjekt (AIP) via RODA/ETERNA V2 API.
+Enkel sökportal för arkivobjekt (AIP) via ETERNA V2 API.
 Byggd med Astro 6 + React 19 + ren CSS. Pakethanterare: Bun.
 
 ## Arkitektur
@@ -59,7 +59,7 @@ Bygg in från start i varje komponent:
 ### Config
 - En enda källa: `public/assets/config/config.json`
 - Ingen localStorage för delad konfiguration
-- PUT /api/config kräver RODA-session (JSESSIONID)
+- PUT /api/config kräver ETERNA-session (JSESSIONID)
 
 ### Dev-server
 - Port 4321, `strictPort: true`

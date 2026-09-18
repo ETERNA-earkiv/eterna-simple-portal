@@ -18,7 +18,7 @@ type FileIndexResult = {
   offset: number;
   limit: number;
   totalCount: number;
-  // RODA kan returnera resultat antingen direkt som IndexedFile eller i wrapper { file: IndexedFile }
+  // ETERNA kan returnera resultat antingen direkt som IndexedFile eller i wrapper { file: IndexedFile }
   results: Array<IndexedFile | { file: IndexedFile }>;
 };
 

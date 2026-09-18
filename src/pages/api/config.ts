@@ -7,7 +7,7 @@
 import type { APIRoute } from 'astro';
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { RODA_API_URL } from '@lib/server/env';
+import { ETERNA_API_URL } from '@lib/server/env';
 
 const CONFIG_PATH = join(process.cwd(), 'public', 'assets', 'config', 'config.json');
 
@@ -49,13 +49,13 @@ export const GET: APIRoute = async () => {
 };
 
 export const PUT: APIRoute = async ({ request }) => {
-  // Kräv RODA-session för skrivning
+  // Kräv ETERNA-session för skrivning
   const cookie = request.headers.get('cookie') || '';
   if (!cookie.includes('JSESSIONID')) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
   }
   try {
-    const authRes = await fetch(`${RODA_API_URL}/api/v2/members/users/authenticated`, {
+    const authRes = await fetch(`${ETERNA_API_URL}/api/v2/members/users/authenticated`, {
       headers: { Cookie: cookie },
     });
     if (!authRes.ok || (await authRes.json())?.id === 'guest') {

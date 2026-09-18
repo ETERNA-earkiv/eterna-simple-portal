@@ -1,7 +1,7 @@
 /**
  * Service Account Session Manager
  *
- * Hanterar en server-side RODA-session för portalen.
+ * Hanterar en server-side ETERNA-session för portalen.
  * Används för att låta anonyma besökare söka utan inloggning.
  *
  * - Lazy init: autentiserar vid första anropet, inte vid startup
@@ -10,19 +10,19 @@
  * - Deduplicerar samtida auth-försök (Promise-lock)
  */
 
-import { RODA_API_URL, PORTAL_SERVICE_USER, PORTAL_SERVICE_PASSWORD } from './env';
+import { ETERNA_API_URL, PORTAL_SERVICE_USER, PORTAL_SERVICE_PASSWORD } from './env';
 
 let cachedSessionId: string | null = null;
 let authPromise: Promise<string> | null = null;
 
 /**
- * Autentisera mot RODA och extrahera JSESSIONID.
+ * Autentisera mot ETERNA och extrahera JSESSIONID.
  */
 async function authenticate(): Promise<string> {
   // Buffer.from hanterar UTF-8 korrekt (btoa klarar inte åäö)
   const credentials = Buffer.from(`${PORTAL_SERVICE_USER}:${PORTAL_SERVICE_PASSWORD}`, 'utf-8').toString('base64');
 
-  const res = await fetch(`${RODA_API_URL}/api/v2/members/users/authenticated`, {
+  const res = await fetch(`${ETERNA_API_URL}/api/v2/members/users/authenticated`, {
     method: 'GET',
     headers: {
       Authorization: `Basic ${credentials}`,
@@ -37,7 +37,7 @@ async function authenticate(): Promise<string> {
         `Service account autentisering misslyckades (${status}). Kontrollera PORTAL_SERVICE_USER/PASSWORD.`,
       );
     }
-    throw new Error(`RODA svarade med ${status} vid service account auth.`);
+    throw new Error(`ETERNA svarade med ${status} vid service account auth.`);
   }
 
   // Extrahera JSESSIONID från Set-Cookie header
@@ -45,7 +45,7 @@ async function authenticate(): Promise<string> {
   const match = setCookie.match(/JSESSIONID=([^;]+)/);
   if (!match) {
     throw new Error(
-      'RODA returnerade inget JSESSIONID cookie. Kontrollera att RODA körs korrekt.',
+      'ETERNA returnerade inget JSESSIONID cookie. Kontrollera att ETERNA körs korrekt.',
     );
   }
 
@@ -80,7 +80,7 @@ export async function getServiceSessionCookie(): Promise<string> {
 }
 
 /**
- * Invalidera cached session. Anropas av proxyn vid 401 från RODA.
+ * Invalidera cached session. Anropas av proxyn vid 401 från ETERNA.
  */
 export function invalidateServiceSession(): void {
   cachedSessionId = null;

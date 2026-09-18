@@ -1,5 +1,5 @@
 /**
- * i18n — Svenska labels för RODA/ETERNA-värden.
+ * i18n — Svenska labels för ETERNA-värden.
  *
  * Strategi:
  * 1. Portalen har inbyggda svenska översättningar (nedan)
@@ -171,7 +171,7 @@ export function getStateLabel(state: string): string {
 }
 
 /**
- * Normalize metadata standard IDs from RODA/ETERNA into a canonical portal key.
+ * Normalize metadata standard IDs from ETERNA into a canonical portal key.
  * Handles variants like ead_2002, ead2002, ead-2002.xml and ead3/ead_3.
  */
 export function normalizeMetadataStandardId(metadataId: string): string {

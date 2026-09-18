@@ -1,6 +1,6 @@
 /**
  * V2 API Type Definitions
- * Based on RODA V2 OpenAPI spec and V2_API_NOTES.md
+ * Based on ETERNA V2 OpenAPI spec and V2_API_NOTES.md
  */
 
 // ============================================================================
@@ -328,7 +328,7 @@ export interface MetadataResult {
 }
 
 /**
- * Metadata standard info from RODA's descriptive metadata information endpoint
+ * Metadata standard info from ETERNA's descriptive metadata information endpoint
  */
 export interface MetadataInfo {
     id: string;
@@ -370,9 +370,9 @@ export type FileIndexResult = IndexResult<FileResult>;
 // Preservation Event Types (PREMIS)
 // ============================================================================
 
-/** Indexed preservation event from RODA */
+/** Indexed preservation event from ETERNA */
 export interface PreservationEvent {
-    uuid?: string;  // @JsonIgnore in RODA Java — not in API response; extract from id URN
+    uuid?: string;  // @JsonIgnore in ETERNA Java — not in API response; extract from id URN
     id: string;
     aipId: string;
     representationUUID?: string;
@@ -507,7 +507,7 @@ export interface MarketInfo {
     compatibility?: string[];
 }
 
-/** Plugin info from RODA */
+/** Plugin info from ETERNA */
 export interface PluginInfo {
     id: string;
     name: string;
@@ -518,7 +518,7 @@ export interface PluginInfo {
     parameters: PluginParameter[];
     /** Object classes this plugin can operate on */
     objectClasses?: string[];
-    /** Whether the plugin is installed in the current RODA instance */
+    /** Whether the plugin is installed in the current ETERNA instance */
     installed?: boolean;
     /** Whether the plugin is verified/signed */
     verified?: boolean;
@@ -532,7 +532,7 @@ export interface PluginInfo {
     hasDocumentationFile?: boolean;
 }
 
-/** Indexed job from RODA */
+/** Indexed job from ETERNA */
 export interface Job {
     uuid: string;
     id: string;
@@ -651,7 +651,7 @@ export interface PluginInfoList {
 // Member Types (Users & Groups)
 // ============================================================================
 
-/** Indexed member from RODA (can be either user or group) */
+/** Indexed member from ETERNA (can be either user or group) */
 export interface IndexedMember {
     uuid: string;
     id: string;
@@ -680,7 +680,7 @@ export type MemberIndexResult = IndexResult<MemberResult>;
 /** Risk severity levels */
 export type RiskSeverity = 'LOW' | 'MODERATE' | 'HIGH';
 
-/** Indexed risk from RODA */
+/** Indexed risk from ETERNA */
 export interface Risk {
     uuid: string;
     id: string;
@@ -748,8 +748,8 @@ export type IncidenceIndexResult = IndexResult<RiskIncidenceResult>;
 // Notification Types
 // ============================================================================
 
-/** RODA notification */
-export interface RodaNotification {
+/** ETERNA notification */
+export interface EternaNotification {
     uuid: string;
     id: string;
     subject: string;
@@ -767,7 +767,7 @@ export interface RodaNotification {
 }
 
 export interface NotificationResult {
-    notification: RodaNotification;
+    notification: EternaNotification;
 }
 
 export type NotificationIndexResult = IndexResult<NotificationResult>;
@@ -776,7 +776,7 @@ export type NotificationIndexResult = IndexResult<NotificationResult>;
 // Audit Log Types
 // ============================================================================
 
-/** Audit log entry from RODA */
+/** Audit log entry from ETERNA */
 export interface AuditLogEntry {
     uuid: string;
     id: string;
@@ -938,7 +938,7 @@ export type RepInfoIndexResult = IndexResult<RepInfoResult>;
 // Distributed Instance / Configuration Types
 // ============================================================================
 
-/** Distributed instance (RODA cluster node) */
+/** Distributed instance (ETERNA cluster node) */
 export interface DistributedInstance {
     id: string;
     name: string;

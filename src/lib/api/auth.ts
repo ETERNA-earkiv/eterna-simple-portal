@@ -9,7 +9,7 @@ let sessionCheckPromise: Promise<boolean> | null = null;
 
 /**
  * Login with Basic Auth credentials.
- * Sends Basic Auth ONLY on this request — RODA sets JSESSIONID cookie.
+ * Sends Basic Auth ONLY on this request — ETERNA sets JSESSIONID cookie.
  */
 export async function login(username: string, password: string): Promise<boolean> {
   const body = {

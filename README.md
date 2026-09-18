@@ -1,6 +1,6 @@
 # Simple Portal
 
-Sökportal för arkivobjekt (AIP) via RODA/ETERNA V2 API.
+Sökportal för arkivobjekt (AIP) via ETERNA V2 API.
 
 Byggd med **Astro 6**, **React 19** och **ren CSS**. Digi Design System (Arbetsförmedlingens designsystem) används för formulärkomponenter och UI-feedback. Ingen separat backend krävs — all konfiguration sparas i en enda `config.json`.
 
@@ -22,7 +22,7 @@ bun install
 
 # 3. Konfigurera miljövariabler
 cp .env.example .env
-# Redigera .env med rätt RODA-credentials och URL
+# Redigera .env med rätt ETERNA-credentials och URL
 
 # 4. Starta dev-server
 bun dev
@@ -34,14 +34,14 @@ Portalen startar på `http://localhost:4321`.
 
 | Variabel | Beskrivning | Default |
 |---|---|---|
-| `RODA_API_URL` | RODA/ETERNA backend-URL | `http://localhost:8080` |
-| `PORTAL_SERVICE_USER` | RODA-konto som anonyma besökare söker som | — (obligatorisk) |
+| `ETERNA_API_URL` | ETERNA backend-URL | `http://localhost:8080` |
+| `PORTAL_SERVICE_USER` | ETERNA-konto som anonyma besökare söker som | — (obligatorisk) |
 | `PORTAL_SERVICE_PASSWORD` | Lösenord för kontot | — (obligatorisk) |
 
 Utan service-kontot kan portalen inte söka: varje anrop failar med
 `EnvInvalidVariables: PORTAL_SERVICE_USER is missing` i serverloggen. Det finns
 ingen tyst fallback till gäst-åtkomst. Kontot avgör vad en besökare utan
-inloggning kan se — ge det minsta möjliga roller i RODA: `aip.read`,
+inloggning kan se — ge det minsta möjliga roller i ETERNA: `aip.read`,
 `descriptive_metadata.read` och `representation.read`
 (Administration → Användare och grupper).
 
@@ -65,7 +65,7 @@ inloggning kan se — ge det minsta möjliga roller i RODA: `aip.read`,
 ## Funktioner
 
 ### Sökning (utan inloggning)
-- Fulltextsökning mot RODA V2 API som portalens service-konto
+- Fulltextsökning mot ETERNA V2 API som portalens service-konto
 - Besökare behöver **inte** logga in — credentials finns bara server-side
 - Expanderbara resultatkort med metadata och filer inline (lazy-loaded)
 - Avancerade filter: beskrivningsnivå, typ, datum, fritext
@@ -85,7 +85,7 @@ inloggning kan se — ge det minsta möjliga roller i RODA: `aip.read`,
 - jsPDF + JSZip lazy-loaded — laddas först vid nedladdning
 
 ### Inloggning (för admin)
-- Basic Auth mot RODA (stödjer UTF-8 i lösenord)
+- Basic Auth mot ETERNA (stödjer UTF-8 i lösenord)
 - JSESSIONID-sessionscookie
 - Automatisk redirect vid session-expired (enbart admin-sidor)
 
@@ -112,10 +112,10 @@ inloggning kan se — ge det minsta möjliga roller i RODA: `aip.read`,
 
 ## Säkerhet
 
-- **Proxy-härdning:** Anonyma requests begränsas till GET + vitlistade POST `/find`-endpoints. PUT/PATCH/DELETE kräver inloggning. Service-kontots roller i RODA är den auktoritativa spärren — proxyn är ett extra lager.
+- **Proxy-härdning:** Anonyma requests begränsas till GET + vitlistade POST `/find`-endpoints. PUT/PATCH/DELETE kräver inloggning. Service-kontots roller i ETERNA är den auktoritativa spärren — proxyn är ett extra lager.
 - **Service-sessionen läcker aldrig:** Kontots JSESSIONID hålls server-side och forwardas aldrig som Set-Cookie till browsern.
-- **Middleware fail-closed:** Om RODA inte svarar returneras 503 (inte open access till admin).
-- **XSS-skydd:** HTML från RODA saneras med DOMPurify innan rendering.
+- **Middleware fail-closed:** Om ETERNA inte svarar returneras 503 (inte open access till admin).
+- **XSS-skydd:** HTML från ETERNA saneras med DOMPurify innan rendering.
 - **Request timeout:** 30s timeout på alla API-anrop via AbortController.
 - **Användarvänliga felmeddelanden:** Alla HTTP-fel mappas till svenska meddelanden — inga råa statuskoder eller JSON i UI.
 
@@ -141,12 +141,12 @@ bun run test
 Browser
   │
   ├── Publika sidor (sök, filvisning)
-  │     └── /api/v2/* → Astro catch-all proxy → RODA
+  │     └── /api/v2/* → Astro catch-all proxy → ETERNA
   │           Ingen JSESSIONID? → injicera service-kontots session
-  │           401 från RODA? → invalidera session + ett omförsök
+  │           401 från ETERNA? → invalidera session + ett omförsök
   │
   └── Admin-sidor (/admin/*)
-        └── Kräver inloggning (RODA-konto)
+        └── Kräver inloggning (ETERNA-konto)
               Har JSESSIONID → forward user session
 ```
 
@@ -155,22 +155,22 @@ Browser
 | Besökare | Hur | Session |
 |---|---|---|
 | Anonym (sök) | Portalens service-konto, server-side | Ingen cookie sätts |
-| Inloggad admin | Eget RODA-konto via login | Browser JSESSIONID |
-| Login-försök | Basic Auth header | Forward direkt till RODA |
+| Inloggad admin | Eget ETERNA-konto via login | Browser JSESSIONID |
+| Login-försök | Basic Auth header | Forward direkt till ETERNA |
 
 ### En enda konfigurationskälla
 
 All konfiguration (tema, synlighet, sökfält) sparas i `public/assets/config/config.json`.
 
 - **Läsning:** Astro läser server-side. React hämtar via centraliserad `loadConfig()` (cachad).
-- **Skrivning:** Admin sparar via `PUT /api/config` (kräver RODA-session) + `invalidateConfigCache()`.
+- **Skrivning:** Admin sparar via `PUT /api/config` (kräver ETERNA-session) + `invalidateConfigCache()`.
 - **Resultat:** Alla besökare ser samma tema och synlighetsregler.
 
 ### API-proxy
 
 | API | Mål | Syfte |
 |---|---|---|
-| `/api/v2/*` | Astro catch-all → RODA | Sök, metadata, filer (med auth-injection) |
+| `/api/v2/*` | Astro catch-all → ETERNA | Sök, metadata, filer (med auth-injection) |
 | `/api/config` | Astro API-endpoint | Läs/skriv config.json |
 
 ---
@@ -232,7 +232,7 @@ src/
     admin/tema.astro           Tema (namn, logga, färg)
     admin/konfiguration.astro  Export/import config
     api/config.ts              GET/PUT config.json
-    api/v2/[...path].ts        Catch-all proxy till RODA (auth-injection)
+    api/v2/[...path].ts        Catch-all proxy till ETERNA (auth-injection)
 
   components/
     portal-ui/                 Digi-wrappers (PortalButton, PortalInput, etc.)
@@ -246,7 +246,7 @@ src/
     api/                       Fetch-klient + API-funktioner
     stores/                    Nanostores (search, config, user)
     theme/                     Tema-logik
-    types/                     TypeScript-typer (RODA V2 API)
+    types/                     TypeScript-typer (ETERNA V2 API)
     utils/                     metadata-parser, xpath, i18n, package
 
   styles/

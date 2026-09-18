@@ -9,7 +9,7 @@
  */
 
 import type { APIRoute } from 'astro';
-import { RODA_API_URL } from '@lib/server/env';
+import { ETERNA_API_URL } from '@lib/server/env';
 
 // Måste matcha attributen ETERNA satte på cookien, annars raderas den inte.
 const SESSION_COOKIE_OPTIONS = {
@@ -24,7 +24,7 @@ export const POST: APIRoute = async ({ cookies, redirect }) => {
 
   if (sessionId) {
     try {
-      await fetch(`${RODA_API_URL}/logout`, {
+      await fetch(`${ETERNA_API_URL}/logout`, {
         headers: { Cookie: `JSESSIONID=${sessionId}` },
         redirect: 'manual',
       });

@@ -1,5 +1,5 @@
 /**
- * Catch-all proxy: /api/v2/* → RODA
+ * Catch-all proxy: /api/v2/* → ETERNA
  *
  * Tre-vägs auth-logik:
  * 1. Request har Authorization-header → Login-försök, forward direkt
@@ -14,7 +14,7 @@
  */
 
 import type { APIRoute } from 'astro';
-import { RODA_API_URL } from '@lib/server/env';
+import { ETERNA_API_URL } from '@lib/server/env';
 import { getServiceSessionCookie, invalidateServiceSession } from '@lib/server/service-session';
 
 /** Headers som INTE ska forwarda (hop-by-hop) */
@@ -36,7 +36,7 @@ export function detectAuthMode(request: Request): AuthMode {
   return 'service-account';
 }
 
-async function proxyToRoda(
+async function proxyToEterna(
   request: Request,
   path: string,
   authMode: AuthMode,
@@ -44,7 +44,7 @@ async function proxyToRoda(
 ): Promise<Response> {
   // Bygg target URL med query string
   const url = new URL(request.url);
-  const targetUrl = `${RODA_API_URL}/api/v2/${path}${url.search}`;
+  const targetUrl = `${ETERNA_API_URL}/api/v2/${path}${url.search}`;
 
   // Bygg headers
   const headers = new Headers();
@@ -67,23 +67,23 @@ async function proxyToRoda(
   }
   // user-session: forward headers som de är
 
-  const rodaRes = await fetch(targetUrl, {
+  const eternaRes = await fetch(targetUrl, {
     method: request.method,
     headers,
     body: bufferedBody ?? undefined,
     redirect: 'manual',
   });
 
-  return rodaRes;
+  return eternaRes;
 }
 
 function buildResponse(
-  rodaRes: Response,
+  eternaRes: Response,
   authMode: AuthMode,
 ): Response {
   // Kopiera response headers
   const responseHeaders = new Headers();
-  for (const [key, value] of rodaRes.headers.entries()) {
+  for (const [key, value] of eternaRes.headers.entries()) {
     const lower = key.toLowerCase();
     // Forwarda Set-Cookie BARA för riktiga inloggningar. ALDRIG för anonyma
     // requests, och inte heller för ett MISSLYCKAT inloggningsförsök: ETERNA
@@ -92,7 +92,7 @@ function buildResponse(
     // En cookie ska alltså bara finnas i webbläsaren om en verklig inloggning
     // har skett (Header.astro/middleware.ts litar på detta).
     if (lower === 'set-cookie') {
-      const isRealLogin = authMode === 'user-session' || (authMode === 'basic-auth' && rodaRes.ok);
+      const isRealLogin = authMode === 'user-session' || (authMode === 'basic-auth' && eternaRes.ok);
       if (isRealLogin) {
         responseHeaders.append(key, value);
       }
@@ -103,16 +103,16 @@ function buildResponse(
     responseHeaders.set(key, value);
   }
 
-  return new Response(rodaRes.body, {
-    status: rodaRes.status,
-    statusText: rodaRes.statusText,
+  return new Response(eternaRes.body, {
+    status: eternaRes.status,
+    statusText: eternaRes.statusText,
     headers: responseHeaders,
   });
 }
 
 /**
  * Tillåtna POST-endpoints för service-account (anonyma) requests.
- * RODA V2 kräver POST för alla /find-sökningar — dessa är read-only.
+ * ETERNA V2 kräver POST för alla /find-sökningar — dessa är read-only.
  */
 const ANONYMOUS_ALLOWED_POST_PATHS = [
   /^aips\/find$/,
@@ -150,14 +150,14 @@ const handler: APIRoute = async ({ params, request }) => {
   const bufferedBody: ArrayBuffer | null = hasBody ? await request.arrayBuffer() : null;
 
   try {
-    const rodaRes = await proxyToRoda(request, path, authMode, bufferedBody);
+    const eternaRes = await proxyToEterna(request, path, authMode, bufferedBody);
 
     // Service-sessionen kan ha gått ut i ETERNA. Släng den cachade sessionen
     // och gör ett försök till — bufferedBody gör att en POST-sökning kan
     // skickas om utan att bli tom.
-    if (rodaRes.status === 401 && authMode === 'service-account') {
+    if (eternaRes.status === 401 && authMode === 'service-account') {
       invalidateServiceSession();
-      const retryRes = await proxyToRoda(request, path, authMode, bufferedBody);
+      const retryRes = await proxyToEterna(request, path, authMode, bufferedBody);
       if (retryRes.status === 401) {
         return new Response(
           JSON.stringify({ error: 'Arkivet är tillfälligt otillgängligt.' }),
@@ -167,9 +167,9 @@ const handler: APIRoute = async ({ params, request }) => {
       return buildResponse(retryRes, authMode);
     }
 
-    return buildResponse(rodaRes, authMode);
+    return buildResponse(eternaRes, authMode);
   } catch (err) {
-    console.error('[proxy] Fel vid anslutning till RODA:', err);
+    console.error('[proxy] Fel vid anslutning till ETERNA:', err);
     return new Response(
       JSON.stringify({ error: 'Kunde inte ansluta till arkivet.' }),
       { status: 502, headers: { 'Content-Type': 'application/json' } },

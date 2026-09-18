@@ -10,7 +10,7 @@ vi.mock('astro:middleware', () => ({
 
 // Mock the env module
 vi.mock('@lib/server/env', () => ({
-  RODA_API_URL: 'http://mock-roda:8080',
+  ETERNA_API_URL: 'http://mock-eterna:8080',
 }));
 
 import { onRequest } from './middleware';
@@ -59,14 +59,14 @@ describe('middleware auth guard', () => {
     expect(res.headers.get('Location')).toContain('/logga-in');
   });
 
-  it('redirects to login when RODA says session is invalid', async () => {
+  it('redirects to login when ETERNA says session is invalid', async () => {
     (globalThis.fetch as any).mockResolvedValue(new Response('Unauthorized', { status: 401 }));
     const res = await onRequest(createContext('/admin', 'valid-session'), next) as Response;
     expect(res.status).toBe(302);
     expect(res.headers.get('Location')).toContain('expired=1');
   });
 
-  it('redirects to login when RODA returns guest user', async () => {
+  it('redirects to login when ETERNA returns guest user', async () => {
     (globalThis.fetch as any).mockResolvedValue(
       new Response(JSON.stringify({ id: 'guest' }), { status: 200 }),
     );
@@ -74,7 +74,7 @@ describe('middleware auth guard', () => {
     expect(res.status).toBe(302);
   });
 
-  it('returns 503 when RODA is unreachable (fail-closed)', async () => {
+  it('returns 503 when ETERNA is unreachable (fail-closed)', async () => {
     (globalThis.fetch as any).mockRejectedValue(new Error('ECONNREFUSED'));
     const res = await onRequest(createContext('/admin', 'valid-session'), next) as Response;
     expect(res.status).toBe(503);
@@ -82,7 +82,7 @@ describe('middleware auth guard', () => {
     expect(body).toContain('otillgänglig');
   });
 
-  it('allows through when RODA validates the session', async () => {
+  it('allows through when ETERNA validates the session', async () => {
     (globalThis.fetch as any).mockResolvedValue(
       new Response(JSON.stringify({ id: 'admin-user', name: 'Admin' }), { status: 200 }),
     );

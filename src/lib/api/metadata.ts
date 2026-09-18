@@ -99,7 +99,7 @@ function parseHtmlToFields(html: string): MetadataField[] {
     const doc = parser.parseFromString(html, 'text/html');
     const fields: MetadataField[] = [];
 
-    // Try table rows (common RODA format)
+    // Try table rows (common ETERNA format)
     const rows = doc.querySelectorAll('tr');
     for (const row of rows) {
       const cells = row.querySelectorAll('td, th');

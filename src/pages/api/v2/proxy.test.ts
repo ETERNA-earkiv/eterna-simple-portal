@@ -5,7 +5,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock server dependencies before importing handler
 vi.mock('@lib/server/env', () => ({
-  RODA_API_URL: 'http://mock-roda:8080',
+  ETERNA_API_URL: 'http://mock-eterna:8080',
   PORTAL_SERVICE_USER: 'portal-reader',
   PORTAL_SERVICE_PASSWORD: 'hemligt',
 }));

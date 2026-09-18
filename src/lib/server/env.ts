@@ -12,7 +12,7 @@
  */
 
 export {
-  RODA_API_URL,
+  ETERNA_API_URL,
   PORTAL_SERVICE_USER,
   PORTAL_SERVICE_PASSWORD,
 } from 'astro:env/server';
