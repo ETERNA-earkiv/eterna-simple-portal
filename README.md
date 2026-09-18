@@ -62,6 +62,40 @@ inloggning kan se — ge det minsta möjliga roller i ETERNA: `aip.read`,
 
 ---
 
+## Docker och release
+
+Imagen publiceras till `ghcr.io/eterna-earkiv/eterna-simple-portal`.
+
+```bash
+docker run -p 4321:4321 \
+  -e ETERNA_API_URL=https://<din-eterna> \
+  -e PORTAL_SERVICE_USER=<konto> \
+  -e PORTAL_SERVICE_PASSWORD=<lösenord> \
+  ghcr.io/eterna-earkiv/eterna-simple-portal:latest
+```
+
+Credentials sätts som miljövariabler vid drift — de bakas aldrig in i imagen.
+
+| Workflow | Trigger | Resultat |
+|---|---|---|
+| `Test Image` | Manuellt (Actions → Run workflow) | `:dev` och `:sha-<commit>`, linux/amd64 |
+| `Release` | Push av tagg `v*` | `:1.2.3`, `:1.2`, `:latest`, linux/amd64 + arm64 |
+
+Båda kör testsvit och typkontroll före bygget. `Release` stoppar dessutom om
+taggen inte matchar `version` i `package.json`, och kan köras som dry run via
+`workflow_dispatch` för att bygga utan att publicera.
+
+### Släppa en version
+
+```bash
+# 1. Sätt versionen i package.json, commita
+# 2. Tagga och pusha
+git tag v1.2.3
+git push origin v1.2.3
+```
+
+---
+
 ## Funktioner
 
 ### Sökning (utan inloggning)
