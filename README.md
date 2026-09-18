@@ -67,14 +67,28 @@ inloggning kan se — ge det minsta möjliga roller i ETERNA: `aip.read`,
 Imagen publiceras till `ghcr.io/eterna-earkiv/eterna-simple-portal`.
 
 ```bash
+cp .env.example .env    # fyll i service-kontot och ETERNA_API_URL
+docker compose up -d
+```
+
+Eller utan compose:
+
+```bash
 docker run -p 4321:4321 \
   -e ETERNA_API_URL=https://<din-eterna> \
   -e PORTAL_SERVICE_USER=<konto> \
   -e PORTAL_SERVICE_PASSWORD=<lösenord> \
+  -v portal_config:/app/public/assets/config \
   ghcr.io/eterna-earkiv/eterna-simple-portal:latest
 ```
 
 Credentials sätts som miljövariabler vid drift — de bakas aldrig in i imagen.
+
+Volymen `/app/public/assets/config` håller `config.json`, som adminytan skriver
+till. Utan den återgår tema, sökfält och synlighetsregler till imagens
+grundvärden vid varje uppgradering. Använd en named volume, inte en bind mount:
+en named volume ärver imagens `config.json` vid första starten, medan en tom
+bind mount skuggar den.
 
 | Workflow | Trigger | Resultat |
 |---|---|---|

@@ -26,9 +26,14 @@ COPY --from=deps --chown=node:node /app/node_modules ./node_modules
 COPY --from=builder --chown=node:node /app/dist ./dist
 COPY --from=builder --chown=node:node /app/package.json ./package.json
 
-# Konfigurationen skrivs av adminytan vid drift och måste därför vara skrivbar
-# för portalanvändaren.
-VOLUME /app/dist/client/assets/config
+# Statiska tillgångar serveras från dist/client, men config.json läses och
+# skrivs av servern via process.cwd()/public/assets/config (se api/config.ts
+# och PortalLayout.astro). Den katalogen måste därför finnas separat.
+COPY --from=builder --chown=node:node /app/public/assets/config ./public/assets/config
+
+# Adminytan skriver config.json vid drift — montera en volym här för att
+# behålla tema och synlighetsregler över omstarter och uppgraderingar.
+VOLUME /app/public/assets/config
 
 USER node
 

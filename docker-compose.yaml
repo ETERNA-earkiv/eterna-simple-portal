@@ -1,0 +1,50 @@
+# Kör ETERNA Simple Portal mot en befintlig ETERNA-installation.
+#
+#   cp .env.example .env    # fyll i service-kontot och ETERNA_API_URL
+#   docker compose up -d
+#
+# Portalen är fristående och pratar med ETERNA enbart över V2 REST API:t.
+# Kör ETERNA på samma värd? Se networks-avsnittet längst ned.
+
+services:
+  portal:
+    image: ghcr.io/eterna-earkiv/eterna-simple-portal:latest
+    restart: unless-stopped
+    ports:
+      - "4321:4321"
+    environment:
+      # Adressen dit portalen skickar sina API-anrop. Pekar ETERNA på en annan
+      # värd eller port ändras den här.
+      - ETERNA_API_URL=${ETERNA_API_URL:-http://eterna:8080}
+      # Service-kontot som anonyma besökare söker som. Obligatoriskt — utan det
+      # failar varje sökning. Ge kontot minsta möjliga roller i ETERNA.
+      - PORTAL_SERVICE_USER=${PORTAL_SERVICE_USER:?PORTAL_SERVICE_USER måste sättas i .env}
+      - PORTAL_SERVICE_PASSWORD=${PORTAL_SERVICE_PASSWORD:?PORTAL_SERVICE_PASSWORD måste sättas i .env}
+    volumes:
+      # Adminytan skriver config.json (tema, synlighetsregler, sökfält) hit.
+      # Named volume, inte bind mount: då ärvs imagens config.json vid första
+      # starten i stället för att skuggas av en tom katalog.
+      - portal_config:/app/public/assets/config
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:4321/sok').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
+
+volumes:
+  portal_config:
+
+# Kör ETERNA-stacken på samma värd? Anslut portalen till dess nätverk i stället
+# för att gå via en publik adress:
+#
+# networks:
+#   default:
+#     name: <ETERNA-stackens nätverk>
+#     external: true
+#
+# Då når portalen backend som http://eterna:8080.
