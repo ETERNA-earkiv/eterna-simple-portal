@@ -4,19 +4,27 @@ Sökportal för arkivobjekt (AIP) via RODA/ETERNA V2 API.
 
 Byggd med **Astro 6**, **React 19** och **ren CSS**. Digi Design System (Arbetsförmedlingens designsystem) används för formulärkomponenter och UI-feedback. Ingen separat backend krävs — all konfiguration sparas i en enda `config.json`.
 
+Portalen är ett fristående repo och byggs oberoende av ETERNA. Kopplingen sker
+enbart över ETERNA:s V2 REST API — en körande ETERNA-instans krävs i drift, men
+inte för att bygga eller köra testsviten.
+
 ---
 
 ## Snabbstart
 
 ```bash
-# 1. Installera beroenden
+# 1. Klona repot
+git clone https://github.com/ETERNA-earkiv/eterna-simple-portal.git
+cd eterna-simple-portal
+
+# 2. Installera beroenden
 bun install
 
-# 2. Konfigurera miljövariabler
+# 3. Konfigurera miljövariabler
 cp .env.example .env
 # Redigera .env med rätt RODA-credentials och URL
 
-# 3. Starta dev-server
+# 4. Starta dev-server
 bun dev
 ```
 
