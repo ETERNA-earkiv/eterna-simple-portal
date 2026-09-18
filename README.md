@@ -35,12 +35,18 @@ Portalen startar på `http://localhost:4321`.
 | Variabel | Beskrivning | Default |
 |---|---|---|
 | `RODA_API_URL` | RODA/ETERNA backend-URL | `http://localhost:8080` |
+| `PORTAL_SERVICE_USER` | RODA-konto som anonyma besökare söker som | — (obligatorisk) |
+| `PORTAL_SERVICE_PASSWORD` | Lösenord för kontot | — (obligatorisk) |
 
-Portalen behöver **inga credentials** för anonym sökning. Oautentiserade anrop
-skickas vidare till RODA som gäst-användaren `guest`. För att sökningen ska
-fungera måste gruppen `guests` i RODA ha rollerna `aip.read`,
+Utan service-kontot kan portalen inte söka: varje anrop failar med
+`EnvInvalidVariables: PORTAL_SERVICE_USER is missing` i serverloggen. Det finns
+ingen tyst fallback till gäst-åtkomst. Kontot avgör vad en besökare utan
+inloggning kan se — ge det minsta möjliga roller i RODA: `aip.read`,
 `descriptive_metadata.read` och `representation.read`
-(Administration → Användare och grupper → guests → Redigera grupp).
+(Administration → Användare och grupper).
+
+> Använd aldrig ett administratörskonto. Varje anonym besökare får kontots
+> läsrättigheter via portalens vitlistade sökvägar.
 
 ---
 
@@ -59,8 +65,8 @@ fungera måste gruppen `guests` i RODA ha rollerna `aip.read`,
 ## Funktioner
 
 ### Sökning (utan inloggning)
-- Fulltextsökning mot RODA V2 API som gäst-användare (RODA:s `guest`)
-- Besökare behöver **inte** logga in — inga credentials i portalen
+- Fulltextsökning mot RODA V2 API som portalens service-konto
+- Besökare behöver **inte** logga in — credentials finns bara server-side
 - Expanderbara resultatkort med metadata och filer inline (lazy-loaded)
 - Avancerade filter: beskrivningsnivå, typ, datum, fritext
 - Filgrid med thumbnails, hover-overlay (förhandsgranska / ladda ner)
@@ -106,7 +112,8 @@ fungera måste gruppen `guests` i RODA ha rollerna `aip.read`,
 
 ## Säkerhet
 
-- **Proxy-härdning:** Anonyma requests begränsas till GET + vitlistade POST `/find`-endpoints. PUT/PATCH/DELETE kräver inloggning. RODA:s egna gäst-roller är den auktoritativa spärren — proxyn är ett extra lager.
+- **Proxy-härdning:** Anonyma requests begränsas till GET + vitlistade POST `/find`-endpoints. PUT/PATCH/DELETE kräver inloggning. Service-kontots roller i RODA är den auktoritativa spärren — proxyn är ett extra lager.
+- **Service-sessionen läcker aldrig:** Kontots JSESSIONID hålls server-side och forwardas aldrig som Set-Cookie till browsern.
 - **Middleware fail-closed:** Om RODA inte svarar returneras 503 (inte open access till admin).
 - **XSS-skydd:** HTML från RODA saneras med DOMPurify innan rendering.
 - **Request timeout:** 30s timeout på alla API-anrop via AbortController.
@@ -135,7 +142,8 @@ Browser
   │
   ├── Publika sidor (sök, filvisning)
   │     └── /api/v2/* → Astro catch-all proxy → RODA
-  │           Ingen JSESSIONID? → forward anonymt (RODA behandlar som guest)
+  │           Ingen JSESSIONID? → injicera service-kontots session
+  │           401 från RODA? → invalidera session + ett omförsök
   │
   └── Admin-sidor (/admin/*)
         └── Kräver inloggning (RODA-konto)
@@ -146,7 +154,7 @@ Browser
 
 | Besökare | Hur | Session |
 |---|---|---|
-| Anonym (sök) | Ingen auth — RODA:s `guest`-roller | Ingen cookie sätts |
+| Anonym (sök) | Portalens service-konto, server-side | Ingen cookie sätts |
 | Inloggad admin | Eget RODA-konto via login | Browser JSESSIONID |
 | Login-försök | Basic Auth header | Forward direkt till RODA |
 
@@ -234,7 +242,7 @@ src/
     login/                     LoginForm
 
   lib/
-    server/                    Server-only (env.ts, service-session.ts)
+    server/                    Server-only (env.ts, service-session.ts, user-session.ts)
     api/                       Fetch-klient + API-funktioner
     stores/                    Nanostores (search, config, user)
     theme/                     Tema-logik

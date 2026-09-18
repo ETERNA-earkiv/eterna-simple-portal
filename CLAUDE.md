@@ -14,6 +14,7 @@ Astro (SSR, routing, layout) → läser config.json server-side
 
 - **Ingen separat backend** — all config i `public/assets/config/config.json`
 - **API-proxy:** `/api/v2/*` → ETERNA på `localhost:8080`
+- **Anonym sökning** går via portalens service-konto, inte ETERNA:s `guest`
 - **Config API:** `GET/PUT /api/config` (Astro API-endpoint som läser/skriver config.json)
 
 ## Viktiga regler
@@ -47,6 +48,14 @@ Bygg in från start i varje komponent:
 - `prefers-reduced-motion: reduce`
 - Touch targets ≥44×44px
 
+### Service-kontot
+- `PORTAL_SERVICE_USER` / `PORTAL_SERVICE_PASSWORD` är **obligatoriska** — definieras i `env.schema` (astro.config.mjs), saknas de failar varje request
+- Lösenordet är `access: 'secret'` — läses runtime, bakas aldrig in i dist/. Använd ALDRIG `import.meta.env` för det
+- Anonyma requests får kontots session injicerad i proxyn; browserns egna headers strippas
+- Kontots JSESSIONID får ALDRIG forwardas som Set-Cookie till browsern
+- Vid 401 från ETERNA: invalidera sessionen och gör **ett** omförsök, sedan 503
+- Ge kontot minsta möjliga roller — varje besökare ärver dess läsrättigheter
+
 ### Config
 - En enda källa: `public/assets/config/config.json`
 - Ingen localStorage för delad konfiguration
@@ -76,6 +85,7 @@ bun run check      # Typkontroll
 | `src/components/admin/` | Admin-inställningar |
 | `src/lib/api/` | Fetch-klient + API-funktioner |
 | `src/lib/utils/metadata-parser.ts` | XML → fält (EAD, Dublin Core) |
+| `src/lib/server/service-session.ts` | Service-kontots session (cache, dedup, invalidering) |
 | `src/lib/theme/theme.ts` | Tema-logik |
 | `src/lib/utils/i18n.ts` | Svenska labels + ETERNA overlay |
 | `public/assets/config/config.json` | All konfiguration |

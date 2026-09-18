@@ -6,6 +6,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // Mock server dependencies before importing handler
 vi.mock('@lib/server/env', () => ({
   RODA_API_URL: 'http://mock-roda:8080',
+  PORTAL_SERVICE_USER: 'portal-reader',
+  PORTAL_SERVICE_PASSWORD: 'hemligt',
+}));
+
+const invalidateServiceSession = vi.fn();
+vi.mock('@lib/server/service-session', () => ({
+  getServiceSessionCookie: vi.fn().mockResolvedValue('JSESSIONID=service-session-id'),
+  invalidateServiceSession: () => invalidateServiceSession(),
 }));
 
 import { detectAuthMode, isAllowedForServiceAccount, GET, POST, PUT, PATCH, DELETE } from './[...path]';
@@ -35,9 +43,9 @@ describe('detectAuthMode', () => {
     expect(detectAuthMode(req)).toBe('basic-auth');
   });
 
-  it('returns anonymous when neither auth nor cookie is present', () => {
+  it('returns service-account when neither auth nor cookie is present', () => {
     const req = new Request('http://localhost/api/v2/test');
-    expect(detectAuthMode(req)).toBe('anonymous');
+    expect(detectAuthMode(req)).toBe('service-account');
   });
 });
 
@@ -112,6 +120,7 @@ describe('proxy handler integration', () => {
   }
 
   beforeEach(() => {
+    invalidateServiceSession.mockClear();
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
       new Response('{"ok": true}', {
         status: 200,
@@ -120,34 +129,34 @@ describe('proxy handler integration', () => {
     ));
   });
 
-  it('allows GET for anonymous requests', async () => {
+  it('allows GET for service-account requests', async () => {
     const res = await GET(mockContext('GET', 'aips'));
     expect(res.status).toBe(200);
   });
 
-  it('allows POST aips/find for anonymous requests (search)', async () => {
+  it('allows POST aips/find for service-account requests (search)', async () => {
     const res = await POST(mockContext('POST', 'aips/find'));
     expect(res.status).toBe(200);
   });
 
-  it('blocks POST aips/delete for anonymous requests', async () => {
+  it('blocks POST aips/delete for service-account requests', async () => {
     const res = await POST(mockContext('POST', 'aips/delete'));
     expect(res.status).toBe(401);
     const body = await res.json();
     expect(body.error).toContain('Autentisering krävs');
   });
 
-  it('blocks PUT for anonymous requests', async () => {
+  it('blocks PUT for service-account requests', async () => {
     const res = await PUT(mockContext('PUT', 'aips/123'));
     expect(res.status).toBe(401);
   });
 
-  it('blocks PATCH for anonymous requests', async () => {
+  it('blocks PATCH for service-account requests', async () => {
     const res = await PATCH(mockContext('PATCH', 'aips/123'));
     expect(res.status).toBe(401);
   });
 
-  it('blocks DELETE for anonymous requests', async () => {
+  it('blocks DELETE for service-account requests', async () => {
     const res = await DELETE(mockContext('DELETE', 'aips/123'));
     expect(res.status).toBe(401);
   });
@@ -194,12 +203,79 @@ describe('proxy handler integration', () => {
     expect(res.headers.get('set-cookie')).toBeNull();
   });
 
-  it('never forwards Set-Cookie for anonymous requests', async () => {
+  it('never forwards Set-Cookie for service-account requests', async () => {
     (globalThis.fetch as any).mockResolvedValue(new Response('{"ok": true}', {
       status: 200,
       headers: { 'Content-Type': 'application/json', 'Set-Cookie': 'JSESSIONID=guest-session; Path=/' },
     }));
     const res = await GET(mockContext('GET', 'aips'));
     expect(res.headers.get('set-cookie')).toBeNull();
+  });
+
+  it('injects the service session cookie for service-account requests', async () => {
+    await GET(mockContext('GET', 'aips'));
+    const forwarded: Headers = (globalThis.fetch as any).mock.calls[0][1].headers;
+    expect(forwarded.get('cookie')).toBe('JSESSIONID=service-session-id');
+  });
+
+  it('replaces a browser cookie and Authorization with the service session', async () => {
+    // En besökare utan giltig session kan ändå ha skräp i headers — inget av
+    // det får nå ETERNA, bara service-kontots session.
+    const ctx = mockContext('GET', 'aips', { Cookie: 'OTHER=xyz' });
+    await GET(ctx);
+    const forwarded: Headers = (globalThis.fetch as any).mock.calls[0][1].headers;
+    expect(forwarded.get('cookie')).toBe('JSESSIONID=service-session-id');
+    expect(forwarded.get('authorization')).toBeNull();
+  });
+
+  it('invalidates the session and retries once when ETERNA answers 401', async () => {
+    (globalThis.fetch as any)
+      .mockResolvedValueOnce(new Response('{"status":401}', { status: 401 }))
+      .mockResolvedValueOnce(new Response('{"ok": true}', { status: 200 }));
+
+    const res = await GET(mockContext('GET', 'aips'));
+
+    expect(invalidateServiceSession).toHaveBeenCalledTimes(1);
+    expect((globalThis.fetch as any).mock.calls).toHaveLength(2);
+    expect(res.status).toBe(200);
+  });
+
+  it('answers 503 when the retry also fails with 401', async () => {
+    (globalThis.fetch as any).mockResolvedValue(new Response('{"status":401}', { status: 401 }));
+
+    const res = await GET(mockContext('GET', 'aips'));
+
+    expect(res.status).toBe(503);
+    const body = await res.json();
+    expect(body.error).toContain('tillfälligt otillgängligt');
+  });
+
+  it('reuses the buffered body on retry so the search is not resent empty', async () => {
+    (globalThis.fetch as any)
+      .mockResolvedValueOnce(new Response('{"status":401}', { status: 401 }))
+      .mockResolvedValueOnce(new Response('{"ok": true}', { status: 200 }));
+
+    const ctx = {
+      params: { path: 'aips/find' },
+      request: new Request('http://localhost/api/v2/aips/find', {
+        method: 'POST',
+        body: '{"query":"test"}',
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    } as any;
+    await POST(ctx);
+
+    const retryBody = (globalThis.fetch as any).mock.calls[1][1].body;
+    expect(new TextDecoder().decode(retryBody)).toBe('{"query":"test"}');
+  });
+
+  it('does not retry a 401 for user-session requests', async () => {
+    (globalThis.fetch as any).mockResolvedValue(new Response('{"status":401}', { status: 401 }));
+
+    const res = await GET(mockContext('GET', 'aips', { Cookie: 'JSESSIONID=user-session-id' }));
+
+    expect(invalidateServiceSession).not.toHaveBeenCalled();
+    expect((globalThis.fetch as any).mock.calls).toHaveLength(1);
+    expect(res.status).toBe(401);
   });
 });

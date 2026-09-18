@@ -1,22 +1,18 @@
 /**
  * Server-side environment variables.
  * Importera BARA från server-kontext (middleware, API routes, SSR).
- * Kastar vid startup om obligatoriska variabler saknas.
+ *
+ * Schemat definieras i astro.config.mjs. Astro validerar vid första åtkomst:
+ * saknas PORTAL_SERVICE_USER/PASSWORD failar requesten med EnvInvalidVariables
+ * i stället för att tyst falla tillbaka på gäst-åtkomst.
+ *
+ * PORTAL_SERVICE_PASSWORD är markerad som secret och läses från process.env
+ * vid runtime. Den får aldrig gå via import.meta.env: Vite ersätter den vid
+ * build och lösenordet hamnar då i klartext i dist/.
  */
 
-function getEnv(key: string, fallback?: string): string {
-  // Astro exponerar env vars via import.meta.env, process.env som fallback
-  const val =
-    (import.meta.env?.[key] as string | undefined) ??
-    (typeof process !== 'undefined' ? process.env[key] : undefined) ??
-    fallback;
-
-  if (val === undefined || val === '') {
-    throw new Error(
-      `Miljövariabel ${key} saknas. Se .env.example för dokumentation.`,
-    );
-  }
-  return val;
-}
-
-export const RODA_API_URL = getEnv('RODA_API_URL', 'http://localhost:8080');
+export {
+  RODA_API_URL,
+  PORTAL_SERVICE_USER,
+  PORTAL_SERVICE_PASSWORD,
+} from 'astro:env/server';
