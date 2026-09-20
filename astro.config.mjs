@@ -6,14 +6,18 @@ export default defineConfig({
   integrations: [react()],
   output: 'server',
   adapter: node({ mode: 'standalone' }),
-  // Secrets läses vid runtime, aldrig vid build. access: 'secret' hindrar
-  // Vite från att baka in värdet i bundlen — med import.meta.env hamnade
-  // lösenordet i klartext i dist/.
+  // access: 'secret' betyder här "läs vid runtime", inte bara "känsligt".
+  // Astro genererar `export const KEY = "<buildtidsvärde>"` för access: 'public'
+  // — värdet bakas in i dist/ och går inte att override:a med docker run -e.
+  // access: 'secret' genererar i stället ett process.env-uppslag per åtkomst.
+  // Därför är även ETERNA_API_URL markerad som secret: imagen byggs en gång
+  // och måste kunna peka på olika backends vid körning. Default gäller
+  // fortfarande när variabeln saknas.
   env: {
     schema: {
       ETERNA_API_URL: envField.string({
         context: 'server',
-        access: 'public',
+        access: 'secret',
         default: 'http://localhost:8080',
       }),
       PORTAL_SERVICE_USER: envField.string({ context: 'server', access: 'secret' }),
