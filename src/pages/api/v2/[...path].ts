@@ -36,12 +36,18 @@ export function detectAuthMode(request: Request): AuthMode {
   return 'service-account';
 }
 
+interface ProxyResult {
+  response: Response;
+  /** Session-id:t som faktiskt användes för anropet (service-account-läge). */
+  usedSessionId: string | null;
+}
+
 async function proxyToEterna(
   request: Request,
   path: string,
   authMode: AuthMode,
   bufferedBody: ArrayBuffer | null,
-): Promise<Response> {
+): Promise<ProxyResult> {
   // Bygg target URL med query string
   const url = new URL(request.url);
   const targetUrl = `${ETERNA_API_URL}/api/v2/${path}${url.search}`;
@@ -54,11 +60,14 @@ async function proxyToEterna(
     }
   }
 
+  let usedSessionId: string | null = null;
   if (authMode === 'service-account') {
     // Webbläsarens egna headers får aldrig följa med — anonyma requests ska
     // gå till ETERNA som service-kontot och ingenting annat.
     headers.delete('authorization');
-    headers.set('cookie', await getServiceSessionCookie());
+    const serviceCookie = await getServiceSessionCookie();
+    headers.set('cookie', serviceCookie);
+    usedSessionId = serviceCookie.replace('JSESSIONID=', '');
   } else if (authMode === 'basic-auth') {
     // Ett inloggningsförsök ska bedömas på sina egna uppgifter. En kvarliggande
     // sessionscookie (t.ex. en gäst-session från ett tidigare misslyckat
@@ -74,7 +83,7 @@ async function proxyToEterna(
     redirect: 'manual',
   });
 
-  return eternaRes;
+  return { response: eternaRes, usedSessionId };
 }
 
 function buildResponse(
@@ -150,14 +159,23 @@ const handler: APIRoute = async ({ params, request }) => {
   const bufferedBody: ArrayBuffer | null = hasBody ? await request.arrayBuffer() : null;
 
   try {
-    const eternaRes = await proxyToEterna(request, path, authMode, bufferedBody);
+    const { response: eternaRes, usedSessionId } = await proxyToEterna(request, path, authMode, bufferedBody);
 
-    // Service-sessionen kan ha gått ut i ETERNA. Släng den cachade sessionen
-    // och gör ett försök till — bufferedBody gör att en POST-sökning kan
-    // skickas om utan att bli tom.
-    if (eternaRes.status === 401 && authMode === 'service-account') {
-      invalidateServiceSession();
-      const retryRes = await proxyToEterna(request, path, authMode, bufferedBody);
+    // Service-sessionen kan ha gått ut i ETERNA. En utgången/ogiltig session
+    // ger inte alltid 401 — ETERNA kan svara 403 "guest saknar behörighet"
+    // istället, eftersom en ogiltig JSESSIONID helt enkelt behandlas som
+    // ingen inloggning alls. Släng den cachade sessionen och gör ett försök
+    // till i båda fallen — bufferedBody gör att en POST-sökning kan skickas
+    // om utan att bli tom.
+    //
+    // invalidateServiceSession(usedSessionId) rensar cachen bara om den
+    // fortfarande innehåller SAMMA döda session-id som just misslyckades.
+    // Söksidan skjuter iväg flera parallella requests — utan detta skulle en
+    // request kunna radera en session som en samtidig syskon-request precis
+    // hunnit förnya, och tvinga in alla i en kapplöpning av omloggningar.
+    if ((eternaRes.status === 401 || eternaRes.status === 403) && authMode === 'service-account') {
+      invalidateServiceSession(usedSessionId ?? undefined);
+      const { response: retryRes } = await proxyToEterna(request, path, authMode, bufferedBody);
       if (retryRes.status === 401) {
         return new Response(
           JSON.stringify({ error: 'Arkivet är tillfälligt otillgängligt.' }),
@@ -165,6 +183,30 @@ const handler: APIRoute = async ({ params, request }) => {
         );
       }
       return buildResponse(retryRes, authMode);
+    }
+
+    // En besökare kan ha en JSESSIONID-cookie utan att någonsin ha loggat in
+    // via portalen — webbläsare delar cookies mellan portar på samma host,
+    // så ett besök på ETERNA direkt (t.ex. localhost:8080) läcker en cookie
+    // hit (localhost:4321) också. Om den cookien visar sig vara död/ogiltig
+    // (401/403) ska besökaren INTE se ett rått "Forbidden" — de har aldrig
+    // bett om att vara inloggade. Behandla dem som anonyma istället, och
+    // radera skräpcookien så nästa anrop går direkt via service-kontot.
+    // Begränsat till samma vitlista som service-account-läget använder, så
+    // en verkligt utgången ADMIN-session (t.ex. vid en skriv-operation)
+    // fortsätter att ge ett tydligt fel istället för att tystas ner.
+    if (
+      (eternaRes.status === 401 || eternaRes.status === 403) &&
+      authMode === 'user-session' &&
+      isAllowedForServiceAccount(request.method, path)
+    ) {
+      const { response: fallbackRes } = await proxyToEterna(request, path, 'service-account', bufferedBody);
+      const fallbackResponse = buildResponse(fallbackRes, 'service-account');
+      fallbackResponse.headers.append(
+        'Set-Cookie',
+        'JSESSIONID=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0',
+      );
+      return fallbackResponse;
     }
 
     return buildResponse(eternaRes, authMode);

@@ -269,10 +269,29 @@ describe('proxy handler integration', () => {
     expect(new TextDecoder().decode(retryBody)).toBe('{"query":"test"}');
   });
 
-  it('does not retry a 401 for user-session requests', async () => {
+  it('falls back to the service account for a user-session 401 on a service-account-allowed path', async () => {
+    // En besökare kan ha en (död) JSESSIONID-cookie utan att ha loggat in via
+    // portalen — t.ex. läckt från ett besök på ETERNA direkt på en annan
+    // port. På vitlistade (anonymt tillåtna) sökvägar ska det inte visa ett
+    // rått 401/403 för besökaren, utan tyst falla tillbaka på service-kontot.
+    (globalThis.fetch as any)
+      .mockResolvedValueOnce(new Response('{"status":401}', { status: 401 }))
+      .mockResolvedValueOnce(new Response('{"ok": true}', { status: 200 }));
+
+    const res = await GET(mockContext('GET', 'aips', { Cookie: 'JSESSIONID=stale-session-id' }));
+
+    expect(invalidateServiceSession).not.toHaveBeenCalled();
+    expect((globalThis.fetch as any).mock.calls).toHaveLength(2);
+    expect(res.status).toBe(200);
+    expect(res.headers.get('set-cookie')).toContain('Max-Age=0');
+  });
+
+  it('does not fall back for a user-session 401 on a path service-account cannot reach', async () => {
+    // En verkligt utgången ADMIN-session (t.ex. vid en skriv-operation) ska
+    // fortfarande ge ett tydligt fel, inte tystas ner som anonym åtkomst.
     (globalThis.fetch as any).mockResolvedValue(new Response('{"status":401}', { status: 401 }));
 
-    const res = await GET(mockContext('GET', 'aips', { Cookie: 'JSESSIONID=user-session-id' }));
+    const res = await PUT(mockContext('PUT', 'aips/123', { Cookie: 'JSESSIONID=user-session-id' }));
 
     expect(invalidateServiceSession).not.toHaveBeenCalled();
     expect((globalThis.fetch as any).mock.calls).toHaveLength(1);

@@ -8,25 +8,22 @@ let sessionChecked = false;
 let sessionCheckPromise: Promise<boolean> | null = null;
 
 /**
- * Login with Basic Auth credentials.
- * Sends Basic Auth ONLY on this request — ETERNA sets JSESSIONID cookie.
+ * Login via portalens egen /api/auth/login-endpoint.
+ *
+ * Anropar INTE ETERNA:s API med Basic Auth direkt från klienten — det
+ * valideras aldrig korrekt där (se src/pages/api/auth/login.ts). Servern
+ * byter istället credentials mot en riktig session via ETERNA:s
+ * session-login-endpoint och forwardar JSESSIONID-cookien hit.
  */
 export async function login(username: string, password: string): Promise<boolean> {
-  const body = {
-    filter: { parameters: [{ type: 'AllFilterParameter' }] },
-    onlyActive: true,
-    sublist: { firstElementIndex: 0, maximumElementCount: 1 },
-  };
-
-  const res = await fetch('/api/v2/aips/find', {
+  const res = await fetch('/api/auth/login', {
     method: 'POST',
     credentials: 'include',
     headers: {
-      Authorization: 'Basic ' + btoa(Array.from(new TextEncoder().encode(`${username}:${password}`), (b) => String.fromCharCode(b)).join('')),
       'Content-Type': 'application/json',
       Accept: 'application/json',
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify({ username, password }),
   });
 
   if (!res.ok) return false;

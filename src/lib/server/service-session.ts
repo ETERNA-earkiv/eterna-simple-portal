@@ -17,17 +17,27 @@ let authPromise: Promise<string> | null = null;
 
 /**
  * Autentisera mot ETERNA och extrahera JSESSIONID.
+ *
+ * Använder session-inloggningsendpointen (samma som webbformuläret), INTE
+ * HTTP Basic Auth mot API:et. ETERNA:s Basic Auth-hantering för /api/v2/*
+ * validerar aldrig credentials korrekt — varje request identifieras som
+ * `guest` oavsett rätt/fel lösenord (verifierat både med curl direkt mot
+ * ETERNA och med JWT/Bearer-access-keys, som uppvisar samma symptom).
+ * Session-login-endpointen är däremot bevisat fungerande.
  */
 async function authenticate(): Promise<string> {
-  // Buffer.from hanterar UTF-8 korrekt (btoa klarar inte åäö)
-  const credentials = Buffer.from(`${PORTAL_SERVICE_USER}:${PORTAL_SERVICE_PASSWORD}`, 'utf-8').toString('base64');
-
-  const res = await fetch(`${ETERNA_API_URL}/api/v2/members/users/authenticated`, {
-    method: 'GET',
+  const res = await fetch(`${ETERNA_API_URL}/api/v2/members/users/login`, {
+    method: 'POST',
     headers: {
-      Authorization: `Basic ${credentials}`,
+      'Content-Type': 'application/json',
       Accept: 'application/json',
     },
+    // Lösenordet skickas som ETERNA:s SecureString-format (array av tecken),
+    // inte som en vanlig sträng — det är vad login-endpointen kräver.
+    body: JSON.stringify({
+      username: PORTAL_SERVICE_USER,
+      password: { chars: Array.from(PORTAL_SERVICE_PASSWORD) },
+    }),
   });
 
   if (!res.ok) {
@@ -80,8 +90,17 @@ export async function getServiceSessionCookie(): Promise<string> {
 }
 
 /**
- * Invalidera cached session. Anropas av proxyn vid 401 från ETERNA.
+ * Invalidera cached session. Anropas av proxyn vid 401/403 från ETERNA.
+ *
+ * Tar emot den specifika session-id som visade sig ogiltig, och rensar
+ * cachen bara om den fortfarande matchar. Söksidan skickar flera parallella
+ * requests (aips/find, representations/find, files/find, ...) — utan detta
+ * skulle en request som just ogiltigförklarar en död session kunna radera
+ * en giltig session som en SAMTIDIG syskon-request precis hann hämta,
+ * vilket tvingar in alla i en oändlig omloggnings-kapplöpning.
  */
-export function invalidateServiceSession(): void {
-  cachedSessionId = null;
+export function invalidateServiceSession(staleSessionId?: string): void {
+  if (staleSessionId === undefined || cachedSessionId === staleSessionId) {
+    cachedSessionId = null;
+  }
 }

@@ -29,7 +29,12 @@ export function ThemeSettings() {
   }, [theme.primaryColor]);
 
   function update(next: Partial<SiteTheme>) {
-    setTheme((cur) => normalizeSiteTheme({ ...cur, ...next }));
+    // Ingen normalizeSiteTheme() här — den körs vid varje tangenttryckning
+    // (onChange) och skulle annars snäppa tillbaka portalnamnet till
+    // defaultvärdet så fort fältet blev tomt, mitt i att man suddar för att
+    // skriva ett nytt namn. Normalisering (bl.a. defaultnamn vid tomt fält)
+    // sker istället i saveTheme() när man faktiskt sparar.
+    setTheme((cur) => ({ ...cur, ...next }));
     setStatus(null);
     setError(null);
   }
