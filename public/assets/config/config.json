@@ -113,23 +113,22 @@
     "sections": [
       {
         "heading": "Om verksamheten",
-        "body": "Föreningsarkivet i Jämtlands län (FAJ) är en ideell kulturförening som arbetar för att bevara, tillgängliggöra och levandegöra enskilda arkiv som en del av kulturarvet.\n\nFöreningen har drygt 460 medlemmar och erbjuder både arkivtjänster och ett brett programutbud: originalarkiv och läsesal, föreläsningar och kurser, skolverksamhet samt forsknings- och dokumentationsprogram.\n\nVerksamheten regleras av föreningens stadgar och en kulturplan, och bedrivs med stöd av årliga avtal med Region Jämtland Härjedalen samt bidrag från Kulturrådet."
+        "body": "Det här är exempeltext. Beskriv här organisationen som ansvarar för arkivet: vilka ni är, ert uppdrag och hur verksamheten bedrivs.\n\nTexten ändras av en administratör under Admin → Konfiguration (exportera config.json, redigera aboutConfig och importera filen igen)."
       },
       {
         "heading": "Om arkivet",
-        "body": "Arkivet bevarar handlingar från omkring 5 000 föreningar i länet — bland annat från nykterhetsrörelsen, arbetarrörelsen, frikyrkorörelsen och idrottsrörelsen — samt företags-, gårds- och personarkiv.\n\nSamlingarna omfattar administrativt material som protokoll, matriklar, kassaböcker och verksamhetsberättelser, fotografier och affischer, samt omkring 300 fanor och standar från folkrörelser, fackföreningar och sångkörer. Fanor och standar tas emot för permanent förvaring och kan inte lämnas tillbaka.\n\nArkivet finns på Arkivvägen 1 i Östersund. En sökbar databas över materialet finns via Riksarkivets webbplats."
+        "body": "Beskriv här vad arkivet innehåller, till exempel vilka arkivbildare och typer av handlingar som finns och vilka tidsperioder samlingarna omfattar.\n\nBerätta gärna också hur besökare kan ta del av material som inte är digitaliserat."
       },
       {
         "heading": "Kontakt",
-        "body": "Arkivvägen 1, 831 52 Östersund\nTelefon: 063-10 06 07\nE-post: info@jamtlandsarkivet.se"
+        "body": "Gatuadress 1, 123 45 Ort\nTelefon: 000-00 00 00\nE-post: info@example.com"
       }
     ],
     "sourceLinks": [
-      { "label": "Om FAJ:s verksamhet (faj.se)", "url": "https://faj.se/about/verksamhet/" },
-      { "label": "Om arkivet (faj.se)", "url": "https://faj.se/arkiv/" }
+      { "label": "Exempellänk (example.com)", "url": "https://www.example.com/" }
     ]
   },
   "downloadConfig": {
-    "sourceText": "Informationen är hämtad från Jämtlands läns e-arkiv"
+    "sourceText": "Informationen är hämtad från e-arkivet"
   }
 }
