@@ -156,6 +156,42 @@ git push origin v1.2.3
 ### Admin — Konfiguration (`/admin/konfiguration`)
 - Exportera/importera config.json
 
+### Om-sidan (`/om`)
+
+Texten på "Om arkivet" är unik per installation och har inget eget formulär i
+adminytan. Den ligger under `aboutConfig` i `config.json`. Repot levereras med
+neutral exempeltext som ska bytas ut vid driftsättning.
+
+```json
+"aboutConfig": {
+  "menuLabel": "Om arkivet",
+  "title": "Om arkivet",
+  "sections": [
+    { "heading": "Kontakt", "body": "Stycke ett\n\nStycke två\nmed radbrytning" }
+  ],
+  "sourceLinks": [
+    { "label": "Länktext", "url": "https://..." }
+  ]
+}
+```
+
+- `menuLabel` — länktext i menyn. Tom sträng döljer menylänken (sidan nås fortfarande via `/om`).
+- `title` — sidrubrik och sidtitel.
+- `sections` — avsnitt i ordning. `heading` är valfri. I `body` ger `\n\n` nytt stycke och `\n` radbrytning.
+- `sourceLinks` — valfri rad "Källor: …" längst ner.
+- Texten renderas som ren text — HTML och Markdown stöds inte.
+
+**Ändra på en körande portal:** Admin → Konfiguration → *Exportera config.json*,
+redigera `aboutConfig`, *Importera config.json*. Ändringen syns direkt för alla
+besökare. Hela `aboutConfig` ersätts vid import, så ta med alla avsnitt.
+
+Att ändra `public/assets/config/config.json` i repot påverkar bara nya
+installationer — en befintlig Docker-installation läser från sin volym (se
+[Docker och release](#docker-och-release)).
+
+Samma sak gäller `downloadConfig.sourceText`, källraden i metadatafilen vid
+paketnedladdning.
+
 ---
 
 ## Säkerhet
