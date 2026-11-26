@@ -31,8 +31,9 @@ COPY --from=builder --chown=node:node /app/package.json ./package.json
 # och PortalLayout.astro). Den katalogen måste därför finnas separat.
 COPY --from=builder --chown=node:node /app/public/assets/config ./public/assets/config
 
-# Adminytan skriver config.json vid drift — montera en volym här för att
-# behålla tema och synlighetsregler över omstarter och uppgraderingar.
+# Adminytan skriver config.json och uppladdade PDF-filer (filer/) hit vid
+# drift — montera en volym här för att behålla tema, synlighetsregler och
+# filer över omstarter och uppgraderingar.
 VOLUME /app/public/assets/config
 
 USER node

@@ -85,8 +85,9 @@ docker run -p 4321:4321 \
 Credentials sätts som miljövariabler vid drift — de bakas aldrig in i imagen.
 
 Volymen `/app/public/assets/config` håller `config.json`, som adminytan skriver
-till. Utan den återgår tema, sökfält och synlighetsregler till imagens
-grundvärden vid varje uppgradering. Använd en named volume, inte en bind mount:
+till, och PDF-filer som laddats upp via adminytan. Utan den återgår tema,
+sökfält och synlighetsregler till imagens grundvärden vid varje uppgradering,
+och uppladdade filer försvinner. Använd en named volume, inte en bind mount:
 en named volume ärver imagens `config.json` vid första starten, medan en tom
 bind mount skuggar den.
 
@@ -155,6 +156,20 @@ git push origin v1.2.3
 
 ### Admin — Konfiguration (`/admin/konfiguration`)
 - Exportera/importera config.json
+- Ladda upp PDF-filer som portalens texter kan länka till
+
+### Uppladdade filer (`/filer/<filnamn>`)
+
+Under Admin → Konfiguration → *Ladda upp PDF* kan en inloggad användare ladda
+upp en PDF. Filen blir publik på `/filer/<filnamn>`, och adressen visas direkt
+efter uppladdningen.
+
+- Bara PDF, högst 20 MB. Servern kontrollerar både filändelsen och innehållet.
+- Filnamnet rensas till små bokstäver, `a–z`, siffror, `-` och `_`. `Min Lista ÅÄÖ.pdf` blir `min-lista-aao.pdf`.
+- En fil med samma namn ersätter den tidigare, så adressen är stabil när filen byts.
+- Filerna sparas i `public/assets/config/filer/`, alltså i samma volym som `config.json`. De överlever omstarter och uppgraderingar men ingår inte i exporten av config.json.
+- Adminytan har ingen lista över filer och ingen borttagning. En fil tas bort genom att radera den i volymen.
+- Uppladdning kräver samma inloggning som att spara config: en ETERNA-session som inte är gäst. Uppladdade filer viruskontrolleras inte.
 
 ### Om-sidan (`/om`)
 

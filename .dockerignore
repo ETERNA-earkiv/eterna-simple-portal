@@ -8,3 +8,5 @@ dist
 !.env.example
 docs
 *.log
+# Filer uppladdade via adminytan hör till installationen, inte till imagen
+public/assets/config/filer
