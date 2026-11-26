@@ -1,8 +1,20 @@
 ---
 import PortalLayout from '../layouts/PortalLayout.astro';
 import { SearchPage } from '../components/search/SearchPage';
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import type { StartConfig } from '@lib/api/config';
+import { normalizeStartConfig } from '@lib/utils/start-config';
+
+// Läs config.json server-side — söksidans texter är unika per installation/kund
+let start: StartConfig | null = null;
+try {
+  const configPath = join(process.cwd(), 'public', 'assets', 'config', 'config.json');
+  const config = JSON.parse(await readFile(configPath, 'utf-8'));
+  start = normalizeStartConfig(config?.startConfig);
+} catch { /* använd defaults */ }
 ---
 
 <PortalLayout title="Sök">
-  <SearchPage client:only="react" />
+  <SearchPage client:only="react" start={start} />
 </PortalLayout>

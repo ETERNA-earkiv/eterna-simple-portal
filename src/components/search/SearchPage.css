@@ -51,6 +51,7 @@
   font-size: 0.85rem;
   color: #374151;
   line-height: 1.5;
+  white-space: pre-line;
 }
 
 .search-form {
@@ -238,4 +239,48 @@
 
 .search-advanced-btn svg {
   pointer-events: none;
+}
+
+/* Starttext från config.json (startConfig) — visas innan man har sökt */
+.start-text {
+  margin-top: 32px;
+}
+
+.start-text__section {
+  margin-bottom: 28px;
+}
+
+.start-text__section h3 {
+  margin: 0 0 10px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #202124;
+}
+
+.start-text__section p,
+.start-text__section ol {
+  margin: 0 0 12px;
+  line-height: 1.6;
+  color: #333;
+}
+
+.start-text__section p {
+  white-space: pre-line;
+}
+
+.start-text__section ol {
+  padding-left: 1.5em;
+}
+
+.start-text__section li {
+  margin-bottom: 4px;
+}
+
+.start-text__section a {
+  color: var(--brand1);
+}
+
+.start-text__section a:focus-visible {
+  outline: 3px solid var(--brand1);
+  outline-offset: 2px;
 }
