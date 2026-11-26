@@ -16,7 +16,11 @@ import { PortalErrorMessage } from '../portal-ui/PortalErrorMessage';
 import { PortalEmptyState } from '../portal-ui/PortalEmptyState';
 import { PortalPagination } from '../portal-ui/PortalPagination';
 import type { FilterParameter } from '@lib/types/api';
+import type { StartConfig } from '@lib/api/config';
+import { parseStartBody } from '@lib/utils/start-config';
 import './SearchPage.css';
+
+const DEFAULT_TITLE = 'Sök i arkivet';
 
 /* ── Error Boundary ── */
 class SearchErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
@@ -36,7 +40,7 @@ class SearchErrorBoundary extends Component<{ children: ReactNode }, { error: Er
 }
 
 /* ── Search Page Content ── */
-function SearchPageContent() {
+function SearchPageContent({ start }: { start: StartConfig | null }) {
   const query = useStore($query);
   const results = useStore($results);
   const totalCount = useStore($totalCount);
@@ -98,28 +102,39 @@ function SearchPageContent() {
 
   if (!initialized) return <PortalSpinner />;
 
+  // Söksidans texter kommer från config.json (startConfig) — unika per installation
+  const title = start?.title || DEFAULT_TITLE;
+  const infoText = start?.infoText;
+  const startSections = start?.sections ?? [];
+  const showStartText = !loading && !error && results.length === 0 && !query
+    && filters.length === 0 && Object.keys(clientFilters).length === 0
+    && startSections.length > 0;
+
   return (
     <div className="search-page">
       <header className="search-header">
         <div className="search-title-row">
-          <h2>Sök i arkivet</h2>
-          <button
-            type="button"
-            className="search-info-btn"
-            onClick={() => setShowSearchInfo((prev) => !prev)}
-            aria-expanded={showSearchInfo}
-            aria-label="Mer information om sökningen"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-              <circle cx="12" cy="12" r="10" />
-              <circle cx="12" cy="8" r="1" fill="currentColor" stroke="none" />
-              <path d="M12 11v5" strokeLinecap="round" />
-            </svg>
-          </button>
+          <h2>{title}</h2>
+          {infoText && (
+            <button
+              type="button"
+              className="search-info-btn"
+              onClick={() => setShowSearchInfo((prev) => !prev)}
+              aria-expanded={showSearchInfo}
+              aria-controls="search-info-text"
+              aria-label="Mer information om sökningen"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" />
+                <circle cx="12" cy="8" r="1" fill="currentColor" stroke="none" />
+                <path d="M12 11v5" strokeLinecap="round" />
+              </svg>
+            </button>
+          )}
         </div>
 
-        {showSearchInfo && (
-          <p className="search-info-text">Så här söker du i arkivet! Lägg till valfri text och beskrivning</p>
+        {infoText && showSearchInfo && (
+          <p id="search-info-text" className="search-info-text">{infoText}</p>
         )}
 
         <form
@@ -238,16 +253,42 @@ function SearchPageContent() {
           />
         )}
 
-{/* Inget meddelande vid tom startsida — sökfältet är självförklarande */}
+        {/* Starttext från config.json — visas bara innan man har sökt */}
+        {showStartText && (
+          <div className="start-text">
+            {startSections.map((s, i) => (
+              <section key={i} className="start-text__section">
+                {s.heading && <h3>{s.heading}</h3>}
+                {parseStartBody(s.body).map((block, j) => (
+                  block.type === 'list' ? (
+                    <ol key={j} start={block.start}>
+                      {block.items.map((item, k) => <li key={k}>{item}</li>)}
+                    </ol>
+                  ) : (
+                    <p key={j}>{block.text}</p>
+                  )
+                ))}
+                {s.link && (
+                  <p>
+                    <a href={s.link.url} target="_blank" rel="noopener noreferrer">
+                      {s.link.label}
+                      <span className="sr-only"> (öppnas i ny flik)</span>
+                    </a>
+                  </p>
+                )}
+              </section>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );
 }
 
-export function SearchPage() {
+export function SearchPage({ start = null }: { start?: StartConfig | null }) {
   return (
     <SearchErrorBoundary>
-      <SearchPageContent />
+      <SearchPageContent start={start} />
     </SearchErrorBoundary>
   );
 }

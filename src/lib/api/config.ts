@@ -64,6 +64,20 @@ export interface AboutConfig {
   sourceLinks?: AboutSourceLink[];
 }
 
+export interface StartSection extends AboutSection {
+  link?: AboutSourceLink;
+}
+
+/** Söksidans texter — unika per installation/kund. Allt är valfritt. */
+export interface StartConfig {
+  /** Sidrubrik. Saknas den används "Sök i arkivet". */
+  title?: string;
+  /** Text bakom (i)-knappen vid rubriken. Saknas den visas ingen knapp. */
+  infoText?: string;
+  /** Avsnitt som visas under sökfältet innan man har sökt. */
+  sections?: StartSection[];
+}
+
 /** Inställningar för paketnedladdningen (metadatafilen) — unikt per installation/kund */
 export interface DownloadConfig {
   /** Källrad under titeln i metadatafilen, t.ex. "Informationen är hämtad från …". Tom = ingen rad. */
@@ -76,6 +90,7 @@ export interface AppConfig {
   visibilityConfig: VisibilityConfig;
   aboutConfig?: AboutConfig;
   downloadConfig?: DownloadConfig;
+  startConfig?: StartConfig;
 }
 
 const DEFAULT_CONFIG: AppConfig = {

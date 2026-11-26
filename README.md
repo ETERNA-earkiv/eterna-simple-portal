@@ -192,6 +192,45 @@ installationer — en befintlig Docker-installation läser från sin volym (se
 Samma sak gäller `downloadConfig.sourceText`, källraden i metadatafilen vid
 paketnedladdning.
 
+### Söksidans texter (`/sok`)
+
+Söksidans rubrik, texten bakom (i)-knappen och en starttext under sökfältet är
+unika per installation och har inget eget formulär i adminytan. De ligger
+under `startConfig` i `config.json`. Repot levereras utan `startConfig`: då
+visas rubriken "Sök i arkivet" och ingen extra text.
+
+```json
+"startConfig": {
+  "title": "Sök i arkivet",
+  "infoText": "Kort hjälptext bakom (i)-knappen.",
+  "sections": [
+    { "body": "Inledning utan rubrik." },
+    {
+      "heading": "Så söker du",
+      "body": "1. Första steget.\n2. Andra steget.\n\nNytt stycke.",
+      "link": { "label": "Länktext", "url": "https://..." }
+    }
+  ]
+}
+```
+
+- `title` — sidrubrik. Saknas den används "Sök i arkivet".
+- `infoText` — text som visas när besökaren klickar på (i)-knappen vid rubriken. Saknas den visas ingen knapp.
+- `sections` — starttext under sökfältet. Den visas innan besökaren har sökt, döljs vid sökning och visas igen när sökningen rensas. `heading` och `link` är valfria.
+- I `body` ger `\n\n` nytt stycke och `\n` radbrytning. Ett stycke där varje rad börjar med `1.`, `2.` osv. blir en numrerad lista.
+- `link` — en länk sist i avsnittet, öppnas i ny flik. Adressen måste börja med `https://`, `http://`, `mailto:` eller `/`.
+- Texten renderas som ren text — HTML och Markdown stöds inte.
+- Avsnitt utan `body` och värden av fel typ hoppas över, så en felaktig import kan inte slå ut söksidan.
+
+**Ändra på en körande portal:** importera en fil som bara innehåller
+`startConfig` via Admin → Konfiguration → *Importera config.json*. Övrig
+konfiguration behålls. Hela `startConfig` ersätts vid import, så ta med alla
+delar. `"startConfig": null` återställer söksidan till standardrubriken utan
+extra text.
+
+En länk med lokal sökväg, till exempel `/filer/lista.pdf`, kräver att
+portalen serverar filen. Config-volymen serveras inte som statiska filer.
+
 ---
 
 ## Säkerhet
