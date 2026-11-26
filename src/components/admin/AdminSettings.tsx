@@ -2,13 +2,38 @@ import { useRef, useState } from 'react';
 import { PortalButton } from '../portal-ui/PortalButton';
 import { PortalAlert } from '../portal-ui/PortalAlert';
 import { invalidateConfigCache } from '@lib/api/config';
+import { uploadPdf, type UploadedFile } from '@lib/api/uploads';
 import './AdminSettings.css';
 
 export function AdminSettings() {
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploaded, setUploaded] = useState<UploadedFile | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const pdfRef = useRef<HTMLInputElement>(null);
+
+  async function handlePdfUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setError(null);
+    setStatus(null);
+    setUploaded(null);
+    setUploading(true);
+    try {
+      const result = await uploadPdf(file);
+      setUploaded(result);
+      setStatus(result.replaced
+        ? 'Filen laddades upp och ersatte en tidigare fil med samma namn.'
+        : 'Filen laddades upp.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Kunde inte ladda upp filen.');
+    } finally {
+      setUploading(false);
+    }
+  }
 
   async function exportConfig() {
     setExporting(true);
@@ -98,6 +123,30 @@ export function AdminSettings() {
           </PortalButton>
           <input ref={fileRef} type="file" accept=".json" onChange={importConfig} className="sr-only" tabIndex={-1} />
         </div>
+      </div>
+
+      <div className="admin-settings__section">
+        <h2>Filer</h2>
+        <p>Ladda upp en PDF som portalen kan länka till, till exempel från söksidans text. Filen blir tillgänglig för alla besökare. En fil med samma namn ersätter den tidigare.</p>
+
+        <div className="admin-settings__actions">
+          <PortalButton
+            variant="secondary"
+            onClick={() => pdfRef.current?.click()}
+            disabled={uploading}
+            loading={uploading}
+            ariaLabel="Ladda upp PDF"
+          >
+            Ladda upp PDF
+          </PortalButton>
+          <input ref={pdfRef} type="file" accept="application/pdf,.pdf" onChange={handlePdfUpload} className="sr-only" tabIndex={-1} />
+        </div>
+
+        {uploaded && (
+          <p className="admin-settings__file" role="status">
+            Filens adress: <a href={uploaded.url} target="_blank" rel="noopener noreferrer">{uploaded.url}</a>
+          </p>
+        )}
       </div>
     </section>
   );

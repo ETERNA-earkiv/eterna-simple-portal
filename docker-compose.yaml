@@ -21,7 +21,8 @@ services:
       - PORTAL_SERVICE_USER=${PORTAL_SERVICE_USER:?PORTAL_SERVICE_USER måste sättas i .env}
       - PORTAL_SERVICE_PASSWORD=${PORTAL_SERVICE_PASSWORD:?PORTAL_SERVICE_PASSWORD måste sättas i .env}
     volumes:
-      # Adminytan skriver config.json (tema, synlighetsregler, sökfält) hit.
+      # Adminytan skriver config.json (tema, synlighetsregler, sökfält) och
+      # uppladdade PDF-filer hit.
       # Named volume, inte bind mount: då ärvs imagens config.json vid första
       # starten i stället för att skuggas av en tom katalog.
       - portal_config:/app/public/assets/config
